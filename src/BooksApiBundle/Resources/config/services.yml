@@ -9,3 +9,7 @@ services:
         class: BooksApiBundle\Api\Books
         arguments:
             - '@BooksApiBundle.Api.BooksApiClient'
+        calls:
+            - method: setCachePool
+              arguments:
+                  - '@cache.app'

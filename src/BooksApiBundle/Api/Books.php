@@ -4,7 +4,7 @@ namespace BooksApiBundle\Api;
 use Franjid\ApiWrapperBundle\Api\Api;
 use Franjid\ApiWrapperBundle\Api\ApiResponse;
 use Franjid\ApiWrapperBundle\Api\ApiRequest;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Psr\Cache\CacheItemPoolInterface;
 
 class Books extends Api implements BooksInterface
 {
@@ -22,6 +22,11 @@ class Books extends Api implements BooksInterface
      * \DateInterval specification string
      */
     const CACHE_TTL = 'P10M';
+
+    /**
+     * @var CacheItemPoolInterface
+     */
+    private $cachePool;
 
     /**
      * {@inheritdoc}
@@ -54,6 +59,11 @@ class Books extends Api implements BooksInterface
         }
     }
 
+    public function setCachePool(CacheItemPoolInterface $cachePool)
+    {
+        $this->cachePool = $cachePool;
+    }
+
     /**
      * @param $limit
      * @param $offset
@@ -61,10 +71,9 @@ class Books extends Api implements BooksInterface
      */
     private function getFromCache($limit, $offset)
     {
-        $cache = new FilesystemAdapter();
         $requestHash = md5($limit . $offset);
 
-        $books = $cache->getItem('books.' . $requestHash);
+        $books = $this->cachePool->getItem('books.' . $requestHash);
         if ($books->isHit()) {
             return $books->get();
         }
@@ -79,14 +88,13 @@ class Books extends Api implements BooksInterface
      */
     private function putInCache($limit, $offset, $books)
     {
-        $cache = new FilesystemAdapter();
         $requestHash = md5($limit . $offset);
 
-        $cachedBooks = $cache->getItem('books.' . $requestHash);
+        $cachedBooks = $this->cachePool->getItem('books.' . $requestHash);
         $cachedBooks->set($books);
         $cachedBooks->expiresAfter(new \DateInterval('P10M'));
 
-        $cache->save($cachedBooks);
+        $this->cachePool->save($cachedBooks);
     }
 
     /**
