@@ -1,0 +1,11 @@
+services:
+    BooksApiBundle.Api.BooksApiClient:
+        class: BooksApiBundle\Api\BooksApiClient
+        factory: ['@ApiWrapperBundle.Component.Api.ApiClientFactory', createApiClient]
+        arguments:
+            - '%booksApiBaseURI%'
+
+    BooksApiBundle.Api.Books:
+        class: BooksApiBundle\Api\Books
+        arguments:
+            - '@BooksApiBundle.Api.BooksApiClient'
